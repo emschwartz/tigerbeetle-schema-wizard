@@ -1,9 +1,11 @@
 import {
-  UsdBankAccount,
+  BankAccount,
+  USD,
+  EUR,
   createUsdBankTransfer,
   createUsdFundingTransfer,
   usdBankAccountDefaults,
-  usdIssuer,
+  USD_ISSUER,
   uuidv7,
 } from "./generated.js";
 import {
@@ -14,12 +16,12 @@ import {
 
 // Create two accounts, the classic Alice and Bob
 
-const alice: UsdBankAccount = {
+const alice: BankAccount<USD> = {
   ...usdBankAccountDefaults,
   id: uuidv7(),
 };
 
-const bob: UsdBankAccount = {
+const bob: BankAccount<USD> = {
   ...usdBankAccountDefaults,
   id: uuidv7(),
 };
@@ -30,7 +32,7 @@ const client = createClient({
 });
 
 console.log("Creating accounts");
-const accounts = [usdIssuer, alice, bob];
+const accounts = [USD_ISSUER, alice, bob];
 console.log(accounts);
 for (const error of await client.createAccounts(accounts)) {
   if (

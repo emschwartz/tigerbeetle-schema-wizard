@@ -14,6 +14,8 @@ export enum Ledgers {
   USD = 1000,
   EUR = 1001,
 }
+export type USD = Ledgers.USD;
+export type EUR = Ledgers.EUR;
 
 /// The type of account
 export enum AccountCodes {
@@ -52,23 +54,28 @@ const transferDefaults: Omit<
   pending_id: 0n,
 };
 
-export const usdBankAccountDefaults: Omit<Account, "id"> = {
+export const usdBankAccountDefaults: Omit<BankAccount<USD>, "id"> = {
   ...accountDefaults,
   ledger: Ledgers.USD,
   code: AccountCodes.BANK_ACCOUNT,
   flags: AccountFlags.debits_must_not_exceed_credits,
 };
 
+export interface IssuerAccount<L extends number = Ledgers> extends Account {
+  ledger: L;
+  flags: AccountFlags.credits_must_not_exceed_debits;
+}
+
 /// The debits on this account represent the total outstanding USD in the system
-export const usdIssuer: Account = {
+export const USD_ISSUER: IssuerAccount<USD> = {
   ...usdBankAccountDefaults,
   id: 1n,
   flags: AccountFlags.credits_must_not_exceed_debits,
 };
 
 /// A bank transfer between two USD accounts
-export const usdBankTransferDefaults: Omit<
-  UsdTransfer,
+const usdBankTransferDefaults: Omit<
+  BankTransfer<USD>,
   "id" | "amount" | "debit_account_id" | "credit_account_id"
 > = {
   ...transferDefaults,
@@ -77,33 +84,33 @@ export const usdBankTransferDefaults: Omit<
 };
 
 /// A funding transfer from the issuer to a USD account
-export const usdFundingTransferDefaults: Omit<
-  UsdFundingTransfer,
+const usdFundingTransferDefaults: Omit<
+  FundingTransfer<USD>,
   "id" | "amount" | "credit_account_id"
 > = {
   ...transferDefaults,
   ledger: Ledgers.USD,
   code: TransferCodes.FUNDING_TRANSFER,
-  debit_account_id: usdIssuer.id,
+  debit_account_id: USD_ISSUER.id,
 };
 
-export type UsdBankAccount = Required<
+export type BankAccount<L = Ledgers> = Required<
   Merge<
     Account,
     {
-      ledger: Ledgers.USD;
+      ledger: L;
       code: AccountCodes.BANK_ACCOUNT;
       flags: AccountFlags.debits_must_not_exceed_credits;
     }
   >
 >;
 
-export type UsdFundingTransfer = Required<
-  Merge<Transfer, { ledger: Ledgers.USD; code: TransferCodes.FUNDING_TRANSFER }>
+export type FundingTransfer<L = Ledgers> = Required<
+  Merge<Transfer, { ledger: L; code: TransferCodes.FUNDING_TRANSFER }>
 >;
 
-export type UsdTransfer = Required<
-  Merge<Transfer, { ledger: Ledgers.USD; code: TransferCodes.BANK_TRANSFER }>
+export type BankTransfer<L = Ledgers> = Required<
+  Merge<Transfer, { ledger: L; code: TransferCodes.BANK_TRANSFER }>
 >;
 
 /// Generate a UUIDv7 as a bigint
@@ -120,7 +127,7 @@ export function createUsdBankTransfer({
   amount: bigint;
   debit_account_id: bigint;
   credit_account_id: bigint;
-}): UsdTransfer {
+}): BankTransfer<USD> {
   return {
     ...usdBankTransferDefaults,
     id: uuidv7(),
@@ -137,7 +144,7 @@ export function createUsdFundingTransfer({
 }: {
   amount: bigint;
   credit_account_id: bigint;
-}): UsdFundingTransfer {
+}): FundingTransfer<USD> {
   return {
     ...usdFundingTransferDefaults,
     id: uuidv7(),
